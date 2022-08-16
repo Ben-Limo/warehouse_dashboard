@@ -30,7 +30,7 @@ const Sidebar = () => {
                   !prevActiveMenuState
                 )}
                 className="text-xl rounded-full p-3 
-                hover:bg-light-gray mt-4 block">
+                hover:bg-light-gray mt-4 block">  {/* md:hidden */}
               <MdOutlineCancel />
             </button>
           </TooltipComponent>
