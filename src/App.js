@@ -11,7 +11,7 @@ import {Dashboard, Transactions, Products, Calendar, Employees,
   Financial, ColorPicker, Editor} from './pages'
 
 const App = () => {
-  const activeMenu = false
+  const activeMenu = true
   return (
     <div>
       <BrowserRouter>
