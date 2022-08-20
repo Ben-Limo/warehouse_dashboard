@@ -10,6 +10,7 @@ import { HiOutlineRefresh } from 'react-icons/hi';
 import { TiTick } from 'react-icons/ti';
 import { GiLouvrePyramid } from 'react-icons/gi';
 import { GrLocation } from 'react-icons/gr';
+import { FaHandshake } from 'react-icons/fa';
 import avatar from './avatar.png';
 import avatar2 from './avatar2.jpg';
 import avatar3 from './avatar3.png';
@@ -485,7 +486,7 @@ export const links = [
     links: [
       {
         name: 'transactions',
-        icon: <AiOutlineShoppingCart />,
+        icon: <FaHandshake />,
       },
       {
         name: 'employees',
@@ -501,7 +502,7 @@ export const links = [
       },
       {
         name: 'products',
-        icon: <RiShoppingBasketLine />,
+        icon: <BsBoxSeam />,
       },
       {
         name: 'materials',
@@ -659,7 +660,7 @@ export const earningData = [
     pcColor: 'green-600',
   },
   {
-    icon: <HiOutlineRefresh />,
+    icon: <FaHandshake />,
     amount: '39,354',
     percentage: '-12%',
     title: 'Transactions',

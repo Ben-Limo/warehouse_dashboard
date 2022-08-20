@@ -3,10 +3,32 @@ import { ChartComponent, SeriesCollectionDirective,
    SeriesDirective, Inject, Legend, Category,
    StackingColumnSeries, Tooltip } from '@syncfusion/ej2-react-charts'
 
-import { stackedCustomSeries, stackedPrimaryXAxis, stackedPrimaryYAxis } from '../../data/dummy'
+import {  stackedPrimaryXAxis, stackedPrimaryYAxis } from '../../data/dummy'
+// stackedCustomSeries,
 
-const Stacked = ({ width, height }) => {
+const Stacked = ({ width, height, stackedChartData }) => {
+  console.log(stackedChartData.sales)
 
+  const stackedCustomSeries = [
+
+    { dataSource: stackedChartData.sales,
+      xName: 'period',
+      yName: 'total',
+      name: 'Sales',
+      type: 'StackingColumn',
+      background: 'blue',
+  
+    },
+  
+    { dataSource: stackedChartData.transactions,
+      xName: 'period',
+      yName: 'total',
+      name: 'Transactions',
+      type: 'StackingColumn',
+      background: 'red',
+  
+    },
+  ]
   return (
     <ChartComponent
       id="charts"

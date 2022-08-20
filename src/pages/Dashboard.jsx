@@ -1,23 +1,56 @@
-import React from 'react'
+import React, { useState, useEffect} from 'react'
 import { GoPrimitiveDot } from 'react-icons/go';
 import { IoIosMore } from 'react-icons/io';
 import { DropDownListComponent } from '@syncfusion/ej2-react-dropdowns';
 
 import { Stacked, Pie, Button, LineChart, SparkLine } from '../components';
-
 import { earningData, medicalproBranding, recentTransactions, weeklyStats, dropdownData, SparklineAreaData, ecomPieChartData } from '../data/dummy';
+
+import { useHttpClient } from '../hooks/http-hooks';
+import { useTransactionsRawData } from '../hooks/transaction-hooks';
 import { useStateContext } from '../contexts/ContextProvider';
+
 import product9 from '../data/product9.jpg';
 
 
 const Dashboard = () => {
   const { currentColor } = useStateContext()
+  const { isLoading, error, sendRequest, clearError } = useHttpClient()
+  const { transformTransactionsRawData } = useTransactionsRawData()
+  const [rawData, setRawData] = useState([])
+  const [widgetsData, setWidgetsData] = useState([])
+  const [stackedChartData, setStackedChartData] = useState({})
 
+  useEffect(() => {
+    const now = new Date()
+    const start = new Date(now.setDate(now.getMonth()-6)).toISOString().slice(0,11)+'00:00:00'
+    const end = new Date().toISOString().slice(0,11)+'23:59:59'
+    
+    try {
+      const fetchData = async () => {
+        const responseData = await sendRequest(
+          `http://localhost:8080/api/transactions?from=${start}&to=${end}`
+        );
+        setRawData(responseData)
+      }
+      fetchData()
+    } catch (err) {}
+  
+  }, [sendRequest])
+  
+  useEffect(() => {
+    try {
+      const [currentTransactions, priorTransactions, widgetsData, stackedChartData]  = transformTransactionsRawData(rawData)
+      setWidgetsData(widgetsData)
+      setStackedChartData(stackedChartData)
+    } catch (err) {}
+  }, [rawData, transformTransactionsRawData])
+  
   return (
     <div className='mt-10'>
       <div className='flex flex-wrap lg:flex-nowrap justify-center '>
         <div className="flex m-3 flex-wrap justify-center gap-1 items-center">
-          {earningData.map(item => (
+          {widgetsData.map(item => (
             <div key={item.title} 
             className="bg-white h-44 dark:text-gray-200 dark:bg-secondary-dark-bg 
             md:w-56 p-4 pt-9 rounded-2xl">
@@ -42,7 +75,7 @@ const Dashboard = () => {
       <div className='flex gap-10 flex-wrap justify-center'>
         <div className='bg-white dark:text-gray-200 dark:bg-secondary-dark-bg m-3 p-4 rounded-2xl md:w-780'>
           <div className='flex justify-between'>
-            <p className="font-semibold text-xl">Revenue Updates</p>
+            <p className="font-semibold text-xl">Sales Trend</p>
             <div className="flex items-center gap-4">
             <p className="flex items-center gap-2 text-gray-600 hover:drop-shadow-xl">
               <span>
@@ -86,7 +119,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div>
-              <Stacked width='320px' height='360px' />
+              <Stacked  width='320px' height='360px' stackedChartData={stackedChartData} />
             </div>
         </div>
       </div>

@@ -1,95 +1,136 @@
 import { useCallback } from 'react';
+import { MdOutlineSupervisorAccount } from 'react-icons/md';
+import { BsBoxSeam } from 'react-icons/bs';
+import { FiBarChart } from 'react-icons/fi';
+import { FaHandshake } from 'react-icons/fa';
+
 
 const today = new Date()
-    const currentMonth = today.getMonth() + 1
-    const monthOffset = today.getMonth() - 5
-    
-    const salesPerMonth = [{name: 'Jan', total: 0}, {name: 'Feb', total: 0}, {name: 'Mar', total: 0}, 
-                            {name: 'Apr', total: 0}, {name: 'May', total: 0}, {name: 'Jun', total: 0}, 
-                            {name: 'Jul', total: 0}, {name: 'Aug', total: 0}, {name: 'Sep', total: 0},
-                            {name: 'Oct', total: 0}, {name: 'Nov', total: 0}, {name: 'Dec', total: 0}]
+const monthOffset = today.getMonth() - 6
 
-    const salesPerDayDict = {}
+const salesPerMonth = [{period: 'Jan', total: 0}, {period: 'Feb', total: 0}, {period: 'Mar', total: 0}, 
+                        {period: 'Apr', total: 0}, {period: 'May', total: 0}, {period: 'Jun', total: 0}, 
+                        {period: 'Jul', total: 0}, {period: 'Aug', total: 0}, {period: 'Sep', total: 0},
+                        {period: 'Oct', total: 0}, {period: 'Nov', total: 0}, {period: 'Dec', total: 0}]
 
-export const useLoadedTransactions = () => {
+const stackedChartData = {};
+stackedChartData.sales = JSON.parse(JSON.stringify(salesPerMonth.slice(new Date().getMonth() - 6, new Date().getMonth() + 1)))
+stackedChartData.transactions = JSON.parse(JSON.stringify(salesPerMonth.slice(new Date().getMonth() - 6, new Date().getMonth() + 1)))
+
+
+export const useTransactionsRawData = () => {
     
     
-    
-    const cleanLoadedTransactions = useCallback((loadedTransactions) => {
+    const transformTransactionsRawData = useCallback((transactionsRawData) => {
         
-        const currentPeriodTransactions = []
-        let numberOfCustomers = [...new Set(loadedTransactions.map(item => item.customer.id))].length
-        let numberOfTransactions = 0
+        const currentTransactions = []
+        const priorTransactions = []
+
+        let numberOfcurrentTransactions = 0
+        let numberOfPriorTransactions = 0
         
-        let totalSales = 0
-        let numOfCurrPeriodProducts = 0
-        let numOfPrevPeriodProducts = 0
+        let numOfCurrentProducts = 0
+        let numOfPriorProducts = 0
+
+        let priorTotalSales = 0
+        let currentTotalSales = 0
 
         let now = new Date()
-        const currentPeriod = new Date(now.setHours(0,0,0,0))
+        const filterBy = new Date(now.setDate(now.getDate()-10)).toISOString().slice(0,11)+'00:00:00'
 
-        loadedTransactions.forEach(transaction => {
+        transactionsRawData.forEach(transaction => {
             let transactionDate = new Date(transaction.createdAt + '')
+            stackedChartData.sales[transactionDate.getMonth() - monthOffset].total += transaction.totalPrice
+            stackedChartData.transactions[transactionDate.getMonth() - monthOffset].total++
             
-            if(transactionDate > currentPeriod) {
-                
-                let record = {
-                    "trackId" : transaction.id.substr(0,18),
-                    "imageURL": "",
-                    "products": [],
-                    "customer": transaction.customer.name,
-                    "date": transactionDate, 
-                    "amount": transaction.totalPrice,
-                    "paymentMethod" : transaction.paymentMethod,
-                    "status": transaction.status
-            
-                }
-                
-                transaction.products.forEach(product => {
-                    record["imageURL"] += product.imageURL
-                    record["products"].push(product.name)
-                    numOfCurrPeriodProducts++;
-                })
-                
-                numberOfTransactions++
-                currentPeriodTransactions.push(record)
+            let record = {
+                "trackId" : transaction.id.substr(0,18),
+                "imageURL": "",
+                "products": [],
+                "customerId": transaction.customer.name,
+                "customer": transaction.customer.name,
+                "date": transactionDate, 
+                "amount": transaction.totalPrice,
+                "paymentMethod" : transaction.paymentMethod,
+                "status": transaction.status
+        
             }
 
-            if (salesPerDayDict[transactionDate.getDate()]) {
-                salesPerDayDict[transactionDate.getDate()].total += transaction.totalPrice
-            } 
+            transaction.products.forEach(product => {
+                record["imageURL"] += product.imageURL
+                record["products"].push(product.name)
+                transactionDate > filterBy ?
+                    numOfCurrentProducts++ : numOfPriorProducts++
+
+            })
+
+            if( transactionDate > filterBy) {
+                numberOfcurrentTransactions++
+                currentTransactions.push(record)
+                currentTotalSales +=  transaction.totalPrice
+            }
+            
             else {
-                salesPerDayDict[transactionDate.getDate()] =  {
-                    day: transactionDate.getDate() + '', total: 0
-                }
+                numberOfPriorTransactions++
+                priorTransactions.push(record)
+                priorTotalSales += transaction.totalPrice
             }
-
-            totalSales +=  transaction.totalPrice
-            
-            
-
         })
 
-        const salesPerDay = []
-        let sevenDaysAgo = new Date().getDate()-6
+        let numberOfCurrentCustomers = [...new Set(currentTransactions.map(item => item.customerId))].length
+        let numberOfPriorCustomers = [...new Set(priorTransactions.map(item => item.customerId))].length
 
-        for(let i =0; i < 7; i++) {
-            salesPerDay[i] = {day: sevenDaysAgo++, total: 0} 
+        const getGrowthRate = (priorVal, currentVal) => {
+            let growthRate = (currentVal - priorVal) / priorVal * 100
+             if (growthRate > 0) 
+                growthRate =  '+' + growthRate
+
+            return growthRate
         }
 
+        const widgetsData = [
+            {
+                icon: <MdOutlineSupervisorAccount />,
+                amount: numberOfCurrentCustomers,
+                percentage: getGrowthRate(numberOfPriorCustomers, numberOfCurrentCustomers) + '%',
+                title: 'Customers',
+                iconColor: '#03C9D7',
+                iconBg: '#E5FAFB',
+                pcColor: 'red-600',
+            },
+            {
+            icon: <BsBoxSeam />,
+            amount: numOfCurrentProducts,
+            percentage: getGrowthRate(numOfPriorProducts, numOfCurrentProducts) + '%',
+            title: 'Products',
+            iconColor: 'rgb(255, 244, 229)',
+            iconBg: 'rgb(254, 201, 15)',
+            pcColor: 'green-600',
+          },
+          {
+            icon: <FiBarChart />,
+            amount: currentTotalSales,
+            percentage: getGrowthRate(priorTotalSales, currentTotalSales) + '%',
+            title: 'Sales',
+            iconColor: 'rgb(228, 106, 118)',
+            iconBg: 'rgb(255, 244, 229)',
         
-
-        let sevenDays = new Date().getDate()-6
-
-        for (var key in salesPerDayDict) {
-            if (salesPerDayDict.hasOwnProperty(key)) {
-                salesPerDay[key-sevenDays] = salesPerDayDict[key];
-            }
-        }
-
-        return [currentPeriodTransactions, totalSales, numOfCurrPeriodProducts, 
-            numberOfCustomers, numberOfTransactions, salesPerDay]
+            pcColor: 'green-600',
+          },
+          {
+            icon: <FaHandshake />,
+            amount: numberOfcurrentTransactions,
+            percentage: getGrowthRate(numberOfPriorTransactions, numberOfcurrentTransactions) + '%',
+            title: 'Transactions',
+            iconColor: 'rgb(0, 194, 146)',
+            iconBg: 'rgb(235, 250, 242)',
+            pcColor: 'red-600',
+          },
+        ]
+        
+        console.log(widgetsData)
+        return [currentTransactions, priorTransactions, widgetsData, stackedChartData]
     }, [])
 
-    return { cleanLoadedTransactions };
+    return { transformTransactionsRawData };
 }
